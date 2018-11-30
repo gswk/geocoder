@@ -4,6 +4,8 @@ require 'pg'
 require 'sinatra'
 require 'zipkin-tracer'
 
+use ZipkinTracer::RackHandler
+
 set :bind, '0.0.0.0'
 
 DB_HOST = ENV["DB_HOST"] || 'localhost'
@@ -30,25 +32,13 @@ post '/' do
     address = coords_to_address(d["lat"], d["long"])
     id = d["id"]
     
-    ZipkinTracer::TraceClient.local_component_span('DB process') do |ztc|
-        ztc.record 'Write Event'
-        ztc.record_tag 'id', "#{id}"
-      
-        conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
-        conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
-      end
+    conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
+    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
 end
 
 get '/' do
-
-    results = []
-
-    ZipkinTracer::TraceClient.local_component_span('DB process') do |ztc|
-        ztc.record 'Read Events'
-    
-        select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
-        results = conn.exec(select_statement)
-    end
+    select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
+    results = conn.exec(select_statement)
     jResults = []
     results.each do |row|
         jResults << row
