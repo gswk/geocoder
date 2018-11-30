@@ -41,6 +41,7 @@ get '/' do
     end
 
     content_type 'application/json'
+    headers 'Access-Control-Allow-Origin' => "*"
     return jResults.to_json
 end
 
