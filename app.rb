@@ -2,6 +2,7 @@ require 'geocoder'
 require 'json'
 require 'pg'
 require 'sinatra'
+require 'zipkin-tracer'
 
 set :bind, '0.0.0.0'
 
