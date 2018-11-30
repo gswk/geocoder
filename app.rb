@@ -40,8 +40,13 @@ post '/' do
 end
 
 get '/' do
-    select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
-    results = conn.exec(select_statement)
+
+    ZipkinTracer::TraceClient.local_component_span('DB process') do |ztc|
+        ztc.record 'Read Events'
+    
+        select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
+        results = conn.exec(select_statement)
+    end
     jResults = []
     results.each do |row|
         jResults << row
