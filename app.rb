@@ -41,6 +41,8 @@ end
 
 get '/' do
 
+    results = []
+
     ZipkinTracer::TraceClient.local_component_span('DB process') do |ztc|
         ztc.record 'Read Events'
     
