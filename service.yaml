@@ -1,0 +1,32 @@
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: geocoder
+  namespace: default
+spec:
+  runLatest:
+    configuration:
+      build:
+        serviceAccountName: build-bot
+        source:
+          git:
+           url: https://github.com/gswk/geocoder.git
+           revision: master
+          template:
+            name: kaniko
+            arguments:
+            - name: IMAGE
+              value: docker.io/gswk/geocoder
+      revisionTemplate:
+        spec:
+          container:
+            image: docker.io/gswk/geocoder
+            env:
+            - name: DB_HOST
+              value: "geocodedb-postgresql.default.svc.cluster.local"
+            - name: DB_DATABASE
+              value: "geocode"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASS
+              value: "devPass"
