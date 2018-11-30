@@ -29,8 +29,14 @@ post '/' do
     d = JSON.parse(request.body.read.to_s)
     address = coords_to_address(d["lat"], d["long"])
     id = d["id"]
-    conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
-    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
+    
+    ZipkinTracer::TraceClient.local_component_span('DB process') do |ztc|
+        ztc.record 'Write Event'
+        ztc.record_tag 'id', "#{id}"
+      
+        conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
+        conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
+      end
 end
 
 get '/' do
