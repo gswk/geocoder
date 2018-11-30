@@ -39,6 +39,8 @@ get '/' do
     results.each do |row|
         jResults << row
     end
+
+    content_type 'application/json'
     return jResults.to_json
 end
 
