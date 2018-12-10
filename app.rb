@@ -2,9 +2,6 @@ require 'geocoder'
 require 'json'
 require 'pg'
 require 'sinatra'
-require 'zipkin-tracer'
-
-use ZipkinTracer::RackHandler
 
 set :bind, '0.0.0.0'
 
