@@ -5,15 +5,15 @@ require 'sinatra'
 
 set :bind, '0.0.0.0'
 
+# DB connection credentials are passed via environment
+# variables
 DB_HOST = ENV["DB_HOST"] || 'localhost'
 DB_DATABASE = ENV["DB_DATABASE"] || 'geocode'
 DB_USER = ENV["DB_USER"] || 'postgres'
 DB_PASS = ENV["DB_PASS"] || 'password'
 
+# Connect to the database and create table if it doesn't exist
 conn = PG.connect( dbname: DB_DATABASE, host: DB_HOST, password: DB_PASS, user: DB_USER)
-puts "Connected to database"
-
-# Create table if it doesn't exist
 conn.exec "CREATE TABLE IF NOT EXISTS events (
     id varchar(20) NOT NULL PRIMARY KEY,
     timestamp timestamp,
@@ -23,7 +23,7 @@ conn.exec "CREATE TABLE IF NOT EXISTS events (
     address text
 );"
 
-# Store event in database
+# Store an event
 post '/' do
     d = JSON.parse(request.body.read.to_s)
     address = coords_to_address(d["lat"], d["long"])
@@ -33,6 +33,7 @@ post '/' do
     conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
 end
 
+# Get all events from the last 24 hours
 get '/' do
     select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
     results = conn.exec(select_statement)
@@ -46,6 +47,7 @@ get '/' do
     return jResults.to_json
 end
 
+# Get the address from a given set of coordinates
 def coords_to_address(lat, lon)
     coords = [lat, lon]
     results = Geocoder.search(coords)
