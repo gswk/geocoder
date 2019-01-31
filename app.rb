@@ -13,7 +13,8 @@ DB_USER = ENV["DB_USER"] || 'postgres'
 DB_PASS = ENV["DB_PASS"] || 'password'
 
 # Connect to the database and create table if it doesn't exist
-conn = PG.connect( dbname: DB_DATABASE, host: DB_HOST, password: DB_PASS, user: DB_USER)
+conn = PG.connect( dbname: DB_DATABASE, host: DB_HOST, 
+    password: DB_PASS, user: DB_USER)
 conn.exec "CREATE TABLE IF NOT EXISTS events (
     id varchar(20) NOT NULL PRIMARY KEY,
     timestamp timestamp,
@@ -29,13 +30,16 @@ post '/' do
     address = coords_to_address(d["lat"], d["long"])
     id = d["id"]
     
-    conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
-    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["mag"], address.to_json])
+    conn.prepare("insert_#{id}", 
+        'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
+    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], 
+        d["lat"], d["long"], d["mag"], address.to_json])
 end
 
 # Get all events from the last 24 hours
 get '/' do
-    select_statement = "select * from events where timestamp > 'now'::timestamp - '24 hours'::interval;"
+    select_statement = "select * from events where 
+        timestamp > 'now'::timestamp - '24 hours'::interval;"
     results = conn.exec(select_statement)
     jResults = []
     results.each do |row|
