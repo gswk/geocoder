@@ -43,7 +43,7 @@ get '/' do
     select_statement = "select * from events where 
         timestamp > 'now'::timestamp - '24 hours'::interval";
     select_suffix = ";"
-    select_suffix = "and type = '" + type + "';" unless type.nil?
+    select_suffix = " and type = '" + type + "';" unless type.nil?
     select_statement = select_statement + select_suffix;
     results = conn.exec(select_statement)
     jResults = []
