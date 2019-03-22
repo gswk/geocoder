@@ -20,7 +20,8 @@ conn.exec "CREATE TABLE IF NOT EXISTS events (
     timestamp timestamp,
     lat double precision,
     lon double precision,
-    mag real,
+    type text,
+    measure real,
     address text
 );"
 
@@ -31,9 +32,9 @@ post '/' do
     id = d["id"]
     
     conn.prepare("insert_#{id}", 
-        'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
+        'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6, $7)')
     conn.exec_prepared("insert_#{id}", [d["id"], d["time"], 
-        d["lat"], d["long"], d["mag"], address.to_json])
+        d["lat"], d["long"], d["type"], d["measure"], address.to_json])
 end
 
 # Get all events from the last 24 hours
