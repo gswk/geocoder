@@ -31,10 +31,13 @@ post '/' do
     address = coords_to_address(d["lat"], d["long"])
     id = d["id"]
     
-    conn.prepare("insert_#{id}", 
-        'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6, $7)')
-    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], 
-        d["lat"], d["long"], d["type"], d["measure"], address.to_json])
+    begin
+        conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6, $7)')
+    rescue PG::DuplicatePstatement => e
+        puts "Duplicate preared statement: #{id}"
+    ensure
+        conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["type"], d["measure"], address.to_json])
+    end
 end
 
 # Get all events from the last 24 hours
