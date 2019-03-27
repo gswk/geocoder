@@ -20,7 +20,8 @@ conn.exec "CREATE TABLE IF NOT EXISTS events (
     timestamp timestamp,
     lat double precision,
     lon double precision,
-    mag real,
+    type text,
+    measure real,
     address text
 );"
 
@@ -30,16 +31,23 @@ post '/' do
     address = coords_to_address(d["lat"], d["long"])
     id = d["id"]
     
-    conn.prepare("insert_#{id}", 
-        'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6)')
-    conn.exec_prepared("insert_#{id}", [d["id"], d["time"], 
-        d["lat"], d["long"], d["mag"], address.to_json])
+    begin
+        conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6, $7)')
+    rescue PG::DuplicatePstatement => e
+        puts "Duplicate preared statement: #{id}"
+    ensure
+        conn.exec_prepared("insert_#{id}", [d["id"], d["time"], d["lat"], d["long"], d["type"], d["measure"], address.to_json])
+    end
 end
 
 # Get all events from the last 24 hours
 get '/' do
+    type = params[:type]
     select_statement = "select * from events where 
-        timestamp > 'now'::timestamp - '24 hours'::interval;"
+        timestamp > 'now'::timestamp - '24 hours'::interval";
+    select_suffix = ";"
+    select_suffix = " and type = '" + type + "';" unless type.nil?
+    select_statement = select_statement + select_suffix;
     results = conn.exec(select_statement)
     jResults = []
     results.each do |row|
