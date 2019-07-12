@@ -16,7 +16,7 @@ DB_PASS = ENV["DB_PASS"] || 'password'
 conn = PG.connect( dbname: DB_DATABASE, host: DB_HOST, 
     password: DB_PASS, user: DB_USER)
 conn.exec "CREATE TABLE IF NOT EXISTS events (
-    id varchar(20) NOT NULL PRIMARY KEY,
+    id varchar(64) NOT NULL PRIMARY KEY,
     timestamp timestamp,
     lat double precision,
     lon double precision,
@@ -28,9 +28,18 @@ conn.exec "CREATE TABLE IF NOT EXISTS events (
 # Store an event
 post '/' do
     d = JSON.parse(request.body.read.to_s)
-    address = coords_to_address(d["lat"], d["long"])
-    id = d["id"]
-    
+    puts "Data: #{d}"
+
+    begin
+        address = coords_to_address(d["lat"], d["long"])
+        id = d["id"]
+        
+        puts d
+    rescue
+        puts "Error pulling address"
+        return
+    end
+
     begin
         conn.prepare("insert_#{id}", 'INSERT INTO events VALUES ($1, $2, $3, $4, $5, $6, $7)')
     rescue PG::DuplicatePstatement => e
@@ -64,7 +73,10 @@ def coords_to_address(lat, lon)
     coords = [lat, lon]
     results = Geocoder.search(coords)
 
+    puts "Resuts: #{results}"
+
     a = results.first
+    puts "First Result: #{a}"
     address = {
         address: a.address,
         house_number: a.house_number,
